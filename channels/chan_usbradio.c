@@ -2143,29 +2143,19 @@ static struct ast_frame *usbradio_read(struct ast_channel *c)
 	}
 #endif
 
-	/* Below is an attempt to match levels to the original CM108 IC which has been
-	 * out of production for over 10 years. Scaling audio to 110% will result in clipping!
-	 * Any adjustments for CM1xxx IC gain differences should be made in the mixer
-	 * settings, not in the audio stream.
-	 * TODO: After the vast majority of existing installs have had a chance to review their
-	 * audio settings and these old scaling/clipping hacks are no longer in significant use
-	 * the legacyaudioscaling cfg and related code should be deleted.
-	 */
-	/* For the CM108 adjust the audio level */
-	if (o->legacyaudioscaling && o->devtype != C108_PRODUCT_ID) {
-		register short *sp = (short *) o->usbradio_write_buf;
-		register float v;
-		register int i;
+	//audio compression
+	register short *sp = (short *) o->usbradio_write_buf;
+	register float v;
+	register int i;
 
-		for (i = 0; i < sizeof(o->usbradio_write_buf) / 2; i++) {
-			v = ((float) *sp) * 1.10;
-			if (v > 32765.0) {
-				v = 32765.0;
-			} else if (v < -32765.0) {
-				v = -32765.0;
-			}
-			*sp++ = (int) v;
+	for (i = 0; i < sizeof(o->usbradio_write_buf) / 2; i++) {
+		v = ((float) *sp);
+		if (v > 16000.0) {
+			v = 16000.0;
+		} else if (v < -16000.0) {
+			v = -16000.0;
 		}
+		*sp++ = (int) v;
 	}
 
 	/* Write the received audio to the sound card */
